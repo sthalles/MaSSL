@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CLoVE</title>
+    <link href="./css/index.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  </head>
+  <body>
+
+    <div class="container">
+        <div class="row">
+            <article>
+                <h1 class="display-4">
+                    Learning from Memory: Non-Parametric Memory Augmented Self-Supervised Learning of Visual Features
+                </h1>
+                <p class="fs-4">
+                    Thalles Santos Silva, Helio Pedrini, Adín Ramírez Rivera
+                </p>
+                <p class="fs-5 fw-light">
+                    The Forty-first International Conference on Machine Learning (ICML 2024)
+                </p>
+            </article>
+            <!-- <img src="./images/carp_overview.png" class="img-fluid" alt="CARP overview architecture."> -->
+            <img src="./images/massl_overview.png" class="rounded float-start" alt="...">
+            <!-- <img src="./images/carp_rp.png" class="rounded float-end" alt="..."> -->
+
+        </div>
+        <div class="row">
+            <h2 class="display-6">Abstract</h2>
+            <p class="fw-light">
+                This paper introduces a novel approach to improving the training stability of self-supervised learning (SSL) methods by leveraging a non-parametric memory of seen concepts. The proposed method involves augmenting a neural network with a memory component to stochastically compare current image views with previously encountered concepts. Additionally, we introduce stochastic memory blocks to regularize training and enforce consistency between image views. We extensively benchmark our method on many vision tasks, such as linear probing, transfer learning, low-shot classification, and image retrieval on many datasets. The experimental results consolidate the effectiveness of the proposed approach in achieving stable SSL training without additional regularizers while learning highly transferable representations and requiring less computing time and resources.</p>
+        </div>
+
+        <div class="row">
+            <h2 class="display-6">Pre-trained models</h2>
+            <p>Models pre-trained on the ImageNet-1K dataset with transformer backbones.</p>
+            <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th scope="col"></th>
+                    <th scope="col">Epochs</th>
+                    <th scope="col">URL</th>
+                  </tr>
+                </thead>
+                <tbody class="table-group-divider w-auto">
+                  <tr>
+                    <th scope="row">MaSSL (ViT-S/16)</th>
+                    <td>300</td>
+                    <td><a class="link-opacity-75-hover" href="https://drive.google.com/drive/folders/1LKWsiOGpVlZGBaI7xiKD4VeZmsWyHoNW?usp=sharing">Checkpoints</a></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">MaSSL (ViT-S/16)</th>
+                    <td>800</td>
+                    <td><a class="link-opacity-75-hover" href="https://drive.google.com/drive/folders/1-LUvP6TcM81qTZW8iOAk_mkrmb3WnII_?usp=sharing">Checkpoints</a></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">MaSSL (ViT-B/16)</th>
+                    <td>300</td>
+                    <td><a class="link-opacity-75-hover" href="https://drive.google.com/drive/folders/1HEsvFuxNqvFPqNzcJt8DBMG_RuHEBSa0?usp=sharing">Checkpoints</a></td>
+                  </tr>
+                </tbody>
+              </table>
+        </div>
+
+        <!-- <div class="row">
+            <h2 class="display-6">Performance</h2>
+            <img src="./images/clove_results.png" class="rounded float-start" alt="...">
+        </div> -->
+
+        <div class="row">
+            <h2 class="display-6">Important links</h2>
+            
+            <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">
+                        <a class="icon-link" href="https://github.com/sthalles/MaSSL">
+                            <i class="bi-code" style="font-size: 2rem; color: cornflowerblue;"></i>
+                            Code
+                        </a>
+                    </th>
+                    <!-- <th scope="col">
+                        <a class="icon-link" href="https://arxiv.org/abs/2310.00527">
+                            <i class="bi-files" style="font-size: 2rem; color: cornflowerblue;"></i>
+                            arXiv
+                        </a>
+                    </th> -->
+                    <!-- <th scope="col">
+                        <a class="icon-link" href="#">
+                            <i class="bi-paperclip" style="font-size: 2rem; color: cornflowerblue;"></i>
+                            NeurIPS 2023 Proceedings
+                        </a>
+                    </th> -->
+                    <th scope="col">
+                        <a class="icon-link" href="https://openreview.net/forum?id=Ed4KgHoKNe">
+                            <i class="bi-paperclip" style="font-size: 2rem; color: cornflowerblue;"></i>
+                            OpenReview
+                        </a>
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+        </div>
+
+        <div class="row">
+            <h2 class="display-6">Poster</h2>
+            <object data="./images/CLoVE_poster_ICCV.pdf" type="application/pdf" width="100%" height="800px"> 
+                <p>It appears you don't have a PDF plugin for this browser.
+                 No biggie... you can <a href="resume.pdf">click here to
+                download the PDF file.</a></p>  
+              </object>
+        </div>
+
+        <div class="row">
+
+            <h2 class="display-6">Reference</h2>
+
+            <pre class="citation"><code >
+@inproceedings{silva2024learning,
+    title={Learning from Memory: Non-Parametric Memory Augmented Self-Supervised Learning of Visual Features},
+    author={Silva, Thalles and Pedrini, Helio and Ram{\'\i}rez, Ad{\'\i}n},
+    booktitle={Forty-first International Conference on Machine Learning},
+    year={2024},
+    url={https://openreview.net/forum?id=Ed4KgHoKNe}
+}
+            </code></pre>
+
+        </div>
+
+        <div class="row">
+            <h2 class="display-6">Authors</h2>
+            <div class="col">
+                <div class="span4"></div>
+                <div class="span4">
+                    <img class="author-profile-images center-block img-thumbnail rounded-circle" src="./images/thalles.jpeg" />
+                    <p class="text-center">Thalles Santos Silva</p>
+                </div>
+                <div class="span4"></div>
+            </div>
+            <div class="col">
+                <div class="span4"></div>
+                <div class="span4">
+                    <img class="author-profile-images center-block img-thumbnail rounded-circle" src="./images/Helio.jpg" />
+                    <p class="text-center">Helio Pedrini</p>
+                </div>
+                <div class="span4"></div>
+            </div>
+            <div class="col">
+                <div class="span4"></div>
+                <div class="span4">
+                    <img class="author-profile-images center-block img-thumbnail rounded-circle" src="./images/adin.jpg" />
+                    <p class="text-center">Adín Ramírez Rivera</p>
+                </div>
+                <div class="span4"></div>
+            </div>
+           
+        </div>
+
+        <div class="row">
+            <h2 class="display-6">Acknowledgements</h2>
+            <p>
+                The computations were performed in part on resources provided by Sigma2---the National Infrastructure for High Performance Computing and Data Storage in Norway---through Project NN8104K.
+                This work was funded in part by the Research Council of Norway, through its Centre for Research-based Innovation funding scheme (grant no. 309439), and Consortium Partners.
+                
+                This study was financed in part by the Coordenação de Aperfeiçoamento de Pessoal de Nível Superior---Brasil (CAPES)---Finance Code 001
+            </p>
+        </div>
+
+        <div class="row">
+
+            <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">
+                        <img class="logo center-block" src="./images/unicamp.png" />
+                    </th>
+                    <th scope="col">
+                        <img class="logo center-block" src="./images/ic.png" />
+                    </th>
+                    <th scope="col">
+                        <img class="logo center-block" src="./images/recod.png" />
+                    </th>
+                    <th scope="col">
+                        <img class="logo center-block" src="./images/uio_logo.png" />
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  </body>
+</html>

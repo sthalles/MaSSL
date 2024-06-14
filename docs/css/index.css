@@ -1,0 +1,17 @@
+.author-profile-images {
+    max-width: 150px !important;
+}
+
+.center-block {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+ }
+
+ .citation {
+    font-family: monospace !important;
+ }
+
+ .logo {
+    max-width: 150px !important;
+ }
