@@ -1,7 +1,7 @@
 # MaSSL
 Official PyTroch implementation for *Learning from Memory: A Non-Parametric Memory Augmented Self-Supervised Learning of Visual Features*
 
-![Alt Text]()
+![Alt Text](https://github.com/sthalles/MaSSL/blob/main/assets/method_video.gif)
 
 Project webpage: https://sthalles.github.io/MaSSL/
 
