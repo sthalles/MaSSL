@@ -728,9 +728,7 @@ def train_one_epoch(
                 student_output, teacher_output, args.partition_size
             )
 
-            student_probs = torch.cat(student_output, dim=1).flatten(
-                0, 1
-            )  # [N_CROPS * N_BLOCKS * BS, BLOCK_SIZE)
+            student_probs = torch.cat(student_output, dim=1).flatten(0, 1)  # [N_CROPS * N_BLOCKS * BS, BLOCK_SIZE)
             student_probs = torch.softmax(student_probs, dim=-1)
 
             ce = criterion_loss(student_output, teacher_output)
