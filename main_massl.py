@@ -24,7 +24,7 @@ import utils
 from head import ProjectionHead
 from memory_bank import MemoryBank
 from random_partition import RandomPartition
-from loss import Criterion
+from criterion import Criterion
 import models
 import socket
 from datetime import datetime
