@@ -7,7 +7,7 @@ Project webpage: https://sthalles.github.io/MaSSL/
 
 ## Video Presentation for ICML
 
-[![MaSSL ICML 2024](https://youtu.be/QyfUUMx19YU?si=2sCN675C61ZwTUrh)
+![MaSSL ICML 2024](https://youtu.be/QyfUUMx19YU?si=2sCN675C61ZwTUrh)
 
 ## Abstract
 
