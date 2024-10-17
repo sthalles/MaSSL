@@ -1,34 +1,27 @@
 import argparse
-from collections import defaultdict
 import os
 import shutil
 import sys
 import datetime
 import time
 import math
-import json
-from pathlib import Path
-from koleo_loss import KoLeoLoss
+from koleo import KoLeoLoss
 import yaml
 
 from PIL import Image
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
-import torch.nn.functional as F
 from torchvision import datasets, transforms
 from torchvision import models as torchvision_models
 from torch.utils.tensorboard import SummaryWriter
-import torch.distributed as dist
 import utils
 from head import ProjectionHead
 from memory_bank import MemoryBank
 from random_partition import RandomPartition
 from criterion import Criterion
 import models
-import socket
 from datetime import datetime
-from pt_distr_env import DistributedEnviron
 
 
 torchvision_archs = sorted(
@@ -140,7 +133,7 @@ def get_args_parser():
         "--gradient_accumulation_steps",
         type=int,
         default=1,
-        help="""Number of steps to 
+        help="""Number of steps to
                         accumulate gradients before an optimization step.""",
     )
     parser.add_argument(
@@ -181,7 +174,7 @@ def get_args_parser():
         help="""Type of optimizer. We recommend using adamw with ViTs.""",
     )
     parser.add_argument(
-        "--drop_path",
+        "--drop_path_rate",
         type=float,
         default=0.1,
         help="""Drop path rate for student network.""",
@@ -298,12 +291,6 @@ def get_args_parser():
         distributed training; see https://pytorch.org/docs/stable/distributed.html""",
     )
     parser.add_argument(
-        "--local-rank",
-        default=0,
-        type=int,
-        help="Please ignore and do not set this argument.",
-    )
-    parser.add_argument(
         "--use_masked_im_modeling",
         default=False,
         type=utils.bool_flag,
@@ -321,32 +308,21 @@ def get_args_parser():
         default=0,
         help="Whether to use mean average pooling instead of returning the CLS token (Default: False)",
     )
+    parser.add_argument("--local_rank", type=int, help="Please ignore and do not set this argument.")
     return parser
 
 
 def train_massl(args):
 
     # init distributed pipeline
-    # utils.init_distributed_mode(args)
-    distr_env = DistributedEnviron()
-
-    # init distributed pipeline
-    # utils.init_distributed_mode(args)
-    dist.init_process_group(backend="nccl")
-    args.world_size = dist.get_world_size()
-    args.rank = dist.get_rank()
-    args.gpu = distr_env.local_rank
-    torch.cuda.set_device(args.gpu)
-    print(
-        "| distributed init (rank {}): {}".format(args.rank, args.dist_url), flush=True
-    )
-    utils.setup_for_distributed(args.rank == 0)
+    utils.init_distributed_mode(args)
 
     # fix random seeds
     utils.fix_random_seeds(args.seed)
     print("git:\n  {}\n".format(utils.get_sha()), flush=True)
     print(
-        "\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())),
+        "\n".join("%s: %s" % (k, str(v))
+                  for k, v in sorted(dict(vars(args)).items())),
         flush=True,
     )
     cudnn.benchmark = True
@@ -389,7 +365,7 @@ def train_massl(args):
     elif args.arch in models.__dict__.keys():
         student = models.__dict__[args.arch](
             patch_size=args.patch_size,
-            drop_path_rate=args.drop_path,
+            drop_path_rate=args.drop_path_rate,
             return_all_tokens=False,
             masked_im_modeling=args.use_masked_im_modeling,
             use_mean_pooling=args.use_mean_pooling,
@@ -438,12 +414,14 @@ def train_massl(args):
         teacher = nn.SyncBatchNorm.convert_sync_batchnorm(teacher)
 
         # we need DDP wrapper to have synchro batch norms working...
-        teacher = nn.parallel.DistributedDataParallel(teacher, device_ids=[args.gpu])
+        teacher = nn.parallel.DistributedDataParallel(
+            teacher, device_ids=[args.local_rank])
         teacher_without_ddp = teacher.module
     else:
         # teacher_without_ddp and teacher are the same thing
         teacher_without_ddp = teacher
-    student = nn.parallel.DistributedDataParallel(student, device_ids=[args.gpu])
+    student = nn.parallel.DistributedDataParallel(
+        student, device_ids=[args.local_rank])
     # teacher and student start with the same weights
     teacher_without_ddp.load_state_dict(student.module.state_dict())
     # there is no backpropagation through the teacher, so no need for gradients
@@ -470,7 +448,8 @@ def train_massl(args):
             params_groups, lr=0, momentum=0.9
         )  # lr is set by scheduler
     elif args.optimizer == "lars":
-        optimizer = utils.LARS(params_groups)  # to use with convnet and large batches
+        # to use with convnet and large batches
+        optimizer = utils.LARS(params_groups)
 
     # init optimizer
     optimizer.zero_grad()
@@ -480,13 +459,8 @@ def train_massl(args):
 
     # ============ init schedulers ... ============
     lr_schedule = utils.cosine_scheduler(
-        args.lr
-        * (
-            args.gradient_accumulation_steps
-            * args.batch_size_per_gpu
-            * utils.get_world_size()
-        )
-        / 256.0,  # linear scaling rule
+        args.lr * (args.batch_size_per_gpu * utils.get_world_size()
+                   ) / 256.0,  # linear scaling rule
         args.min_lr,
         args.epochs,
         len(data_loader),
@@ -535,45 +509,39 @@ def train_massl(args):
     start_epoch = to_restore["epoch"]
 
     summary_writer = None
-    root_dir = "/MaSSL"
     if utils.is_main_process():
-        current_time = datetime.now().strftime("%b%d_%H-%M-%S")
-        summary_writer = SummaryWriter(
-            log_dir=os.path.join(
-                root_dir, "runs", current_time + "_" + socket.gethostname()
-            )
-        )
+        summary_writer = SummaryWriter()
         shutil.copyfile(
-            os.path.join(root_dir, "main_massl.py"),
+            "main_massl.py",
             os.path.join(summary_writer.log_dir, "main_massl.py"),
         )
         shutil.copyfile(
-            os.path.join(root_dir, "utils.py"),
+            "utils.py",
             os.path.join(summary_writer.log_dir, "utils.py"),
         )
         shutil.copyfile(
-            os.path.join(root_dir, "head.py"),
+            "head.py",
             os.path.join(summary_writer.log_dir, "head.py"),
         )
         shutil.copyfile(
-            os.path.join(root_dir, "loss.py"),
-            os.path.join(summary_writer.log_dir, "loss.py"),
+            "criterion.py",
+            os.path.join(summary_writer.log_dir, "criterion.py"),
         )
         shutil.copyfile(
-            os.path.join(root_dir, "memory_bank.py"),
+            "memory_bank.py",
             os.path.join(summary_writer.log_dir, "memory_bank.py"),
         )
         shutil.copyfile(
-            os.path.join(root_dir, "random_partition.py"),
+            "random_partition.py",
             os.path.join(summary_writer.log_dir, "random_partition.py"),
         )
         shutil.copyfile(
-            os.path.join(root_dir, "./models/vision_transformer.py"),
+            "./models/vision_transformer.py",
             os.path.join(summary_writer.log_dir, "vision_transformer.py"),
         )
         shutil.copyfile(
-            os.path.join(root_dir, "koleo_loss.py"),
-            os.path.join(summary_writer.log_dir, "koleo_loss.py"),
+            "koleo.py",
+            os.path.join(summary_writer.log_dir, "koleo.py"),
         )
         stats_file = open(
             os.path.join(summary_writer.log_dir, "stats.txt"), "a", buffering=1
@@ -626,13 +594,15 @@ def train_massl(args):
             save_dict["fp16_scaler"] = fp16_scaler.state_dict()
         if summary_writer is not None:
             utils.save_on_master(
-                save_dict, os.path.join(summary_writer.log_dir, "checkpoint.pth")
+                save_dict, os.path.join(
+                    summary_writer.log_dir, "checkpoint.pth")
             )
         if args.saveckp_freq and (epoch + 1) % args.saveckp_freq == 0:
             if summary_writer is not None:
                 utils.save_on_master(
                     save_dict,
-                    os.path.join(summary_writer.log_dir, f"checkpoint{epoch:04}.pth"),
+                    os.path.join(summary_writer.log_dir,
+                                 f"checkpoint{epoch:04}.pth"),
                 )
 
     total_time = time.time() - start_time
@@ -723,12 +693,13 @@ def train_one_epoch(
             student_output /= args.student_temp
             teacher_output /= teacher_temp
 
-            ## random Parition strategy
+            # random Parition strategy
             student_output, teacher_output = random_partitioning(
                 student_output, teacher_output, args.partition_size
             )
 
-            student_probs = torch.cat(student_output, dim=1).flatten(0, 1)  # [N_CROPS * N_BLOCKS * BS, BLOCK_SIZE)
+            # [N_CROPS * N_BLOCKS * BS, BLOCK_SIZE)
+            student_probs = torch.cat(student_output, dim=1).flatten(0, 1)
             student_probs = torch.softmax(student_probs, dim=-1)
 
             ce = criterion_loss(student_output, teacher_output)
@@ -777,7 +748,8 @@ def train_one_epoch(
             # summary_writer.add_scalar(f"metric/teacher/avg_max_score", torch.max(teacher_probs, dim=-1).values.mean().item(), it)
             # summary_writer.add_scalar(f"metric/teacher/avg_min_score", torch.min(teacher_probs, dim=-1).values.mean().item(), it)
 
-            summary_writer.add_scalar(f"metric/ko/weight", ko_weight_schedule[it], it)
+            summary_writer.add_scalar(
+                f"metric/ko/weight", ko_weight_schedule[it], it)
 
             summary_writer.add_scalar("loss/total", loss.item(), it)
             summary_writer.add_scalar("loss/koleo", ko.item(), it)
@@ -792,7 +764,8 @@ def train_one_epoch(
 
             n_protos = student_probs.shape[1]
             summary_writer.add_histogram(
-                f"dist/probs/blocks_{n_protos}", torch.argmax(student_probs, dim=-1), it
+                f"dist/probs/blocks_{n_protos}", torch.argmax(
+                    student_probs, dim=-1), it
             )
             summary_writer.add_histogram(
                 f"dist/targets/blocks_{n_protos}",
@@ -870,7 +843,8 @@ class DataAugmentationMaSSL(object):
         normalize = transforms.Compose(
             [
                 transforms.ToTensor(),
-                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+                transforms.Normalize((0.485, 0.456, 0.406),
+                                     (0.229, 0.224, 0.225)),
             ]
         )
 
@@ -881,7 +855,8 @@ class DataAugmentationMaSSL(object):
                     224, scale=global_crops_scale, interpolation=Image.BICUBIC
                 ),
                 flip_and_color_jitter,
-                transforms.RandomApply([utils.GaussianBlur([0.1, 2.0])], p=1.0),
+                transforms.RandomApply(
+                    [utils.GaussianBlur([0.1, 2.0])], p=1.0),
                 normalize,
             ]
         )
@@ -892,7 +867,8 @@ class DataAugmentationMaSSL(object):
                     224, scale=global_crops_scale, interpolation=Image.BICUBIC
                 ),
                 flip_and_color_jitter,
-                transforms.RandomApply([utils.GaussianBlur([0.1, 2.0])], p=0.1),
+                transforms.RandomApply(
+                    [utils.GaussianBlur([0.1, 2.0])], p=0.1),
                 transforms.RandomApply([utils.Solarize()], p=0.2),
                 normalize,
             ]
@@ -905,7 +881,8 @@ class DataAugmentationMaSSL(object):
                     96, scale=local_crops_scale, interpolation=Image.BICUBIC
                 ),
                 flip_and_color_jitter,
-                transforms.RandomApply([utils.GaussianBlur([0.1, 2.0])], p=0.5),
+                transforms.RandomApply(
+                    [utils.GaussianBlur([0.1, 2.0])], p=0.5),
                 normalize,
             ]
         )
