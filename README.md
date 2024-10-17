@@ -22,3 +22,16 @@ torchrun --nproc-per-node=4 main_massl.py --arch vit_base --batch_size_per_gpu 3
 ## Abstract
 
 *This paper introduces a novel approach to improving the training stability of self-supervised learning (SSL) methods by leveraging a non-parametric memory of seen concepts. The proposed method involves augmenting a neural network with a memory component to stochastically compare current image views with previously encountered concepts. Additionally, we introduce stochastic memory blocks to regularize training and enforce consistency between image views. We extensively benchmark our method on many vision tasks, such as linear probing, transfer learning, low-shot classification, and image retrieval on many datasets. The experimental results consolidate the effectiveness of the proposed approach in achieving stable SSL training without additional regularizers while learning highly transferable representations and requiring less computing time and resources.*
+
+## Reference
+
+```
+@inproceedings{silva2024massl,
+  title={Learning from Memory: Non-Parametric Memory Augmented Self-Supervised Learning of Visual Features},
+  author={Silva, Thalles and Pedrini, Helio and Rivera, Ad{\'\i}n Ram{\'\i}rez},
+  booktitle={Proceedings of the 41st International Conference on Machine Learning},
+  pages={1--17},
+  month=jul,
+  year={2024}
+}
+```
