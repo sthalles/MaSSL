@@ -130,13 +130,6 @@ def get_args_parser():
         help optimization for larger ViT architectures. 0 for disabling.""",
     )
     parser.add_argument(
-        "--gradient_accumulation_steps",
-        type=int,
-        default=1,
-        help="""Number of steps to
-                        accumulate gradients before an optimization step.""",
-    )
-    parser.add_argument(
         "--batch_size_per_gpu",
         default=32,
         type=int,
@@ -703,7 +696,6 @@ def train_one_epoch(
             student_probs = torch.softmax(student_probs, dim=-1)
 
             ce = criterion_loss(student_output, teacher_output)
-            ce /= args.gradient_accumulation_steps
 
         loss = ce + args.koleo_loss_weight * ko
 
